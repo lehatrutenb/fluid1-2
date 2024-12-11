@@ -1,11 +1,17 @@
-#include <bits/stdc++.h>
+#include <cstdint>
+#include <limits>
+#include <utility>
+#include <cassert>
+#include <random>
+#include <iostream>
+#include <ranges>
 
 using namespace std;
 
-constexpr size_t N = 36, M = 84;
+constexpr size_t N = 36, M = 84; // размеры поля ? TODO
 // constexpr size_t N = 14, M = 5;
-constexpr size_t T = 1'000'000;
-constexpr std::array<pair<int, int>, 4> deltas{{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
+constexpr size_t T = 1'000'000; // кол-во тиков которые будут сделаны
+constexpr std::array<pair<int, int>, 4> deltas{{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}}; // куда из каждой точки попытаемся потечь?
 
 // char field[N][M + 1] = {
 //     "#####",
@@ -24,7 +30,7 @@ constexpr std::array<pair<int, int>, 4> deltas{{{-1, 0}, {1, 0}, {0, -1}, {0, 1}
 //     "#####",
 // };
 
-char field[N][M + 1] = {
+char field[N][M + 1] = { // само поле M + 1 хз почему
     "####################################################################################",
     "#                                                                                  #",
     "#                                                                                  #",
@@ -131,12 +137,12 @@ ostream &operator<<(ostream &out, Fixed x) {
     return out << x.v / (double) (1 << 16);
 }
 
-Fixed rho[256];
+Fixed rho[256]; // какие-то константы? TODO
 
-Fixed p[N][M]{}, old_p[N][M];
+Fixed p[N][M]{}, old_p[N][M]; // ? TODO
 
 struct VectorField {
-    array<Fixed, deltas.size()> v[N][M];
+    array<Fixed, deltas.size()> v[N][M]; // TODO вероятно для каждой клетки какой-то поток в разные стороны
     Fixed &add(int x, int y, int dx, int dy, Fixed dv) {
         return get(x, y, dx, dy) += dv;
     }
@@ -148,92 +154,93 @@ struct VectorField {
     }
 };
 
-VectorField velocity{}, velocity_flow{};
-int last_use[N][M]{};
-int UT = 0;
+VectorField velocity{}, velocity_flow{}; // TODO ?
+int last_use[N][M]{}; // базовый used для dfs
+int UT = 0;  // видимо переменная для dfs (или не проверял что там) чтобы не запускаться из одной вершины много раз
 
 
 mt19937 rnd(1337);
 
-tuple<Fixed, bool, pair<int, int>> propagate_flow(int x, int y, Fixed lim) {
-    last_use[x][y] = UT - 1;
+tuple<Fixed, bool, pair<int, int>> propagate_flow(int x, int y, Fixed lim) { // координаты рассм клетки и lim TODO?
+    last_use[x][y] = UT - 1; // помечаем клетку посещённой
     Fixed ret = 0;
-    for (auto [dx, dy] : deltas) {
-        int nx = x + dx, ny = y + dy;
-        if (field[nx][ny] != '#' && last_use[nx][ny] < UT) {
+    for (auto [dx, dy] : deltas) { // перебираем соседние клетки к нашей
+        int nx = x + dx, ny = y + dy; // коорд соседних клеток
+        if (field[nx][ny] != '#' && last_use[nx][ny] < UT) { // если рассм клетка не препятствие и не была помечена раньше то идём внутрь
             auto cap = velocity.get(x, y, dx, dy);
             auto flow = velocity_flow.get(x, y, dx, dy);
-            if (flow == cap) {
+            if (flow == cap) { // TODO?
                 continue;
             }
             // assert(v >= velocity_flow.get(x, y, dx, dy));
-            auto vp = min(lim, cap - flow);
-            if (last_use[nx][ny] == UT - 1) {
-                velocity_flow.add(x, y, dx, dy, vp);
-                last_use[x][y] = UT;
+            auto vp = min(lim, cap - flow); // TODO?
+            if (last_use[nx][ny] == UT - 1) { // видимо если была подсчитама в пред разы то пересчёт простой TODO?
+                velocity_flow.add(x, y, dx, dy, vp); // добавляем к вытеканию сколько вытечет в напр dx dy TODDO?
+                last_use[x][y] = UT; // помечаем изначальную клетку рассмотренной
                 // cerr << x << " " << y << " -> " << nx << " " << ny << " " << vp << " / " << lim << "\n";
-                return {vp, 1, {nx, ny}};
+                return {vp, 1, {nx, ny}}; // TODO?
             }
-            auto [t, prop, end] = propagate_flow(nx, ny, vp);
-            ret += t;
+            auto [t, prop, end] = propagate_flow(nx, ny, vp); // идём в соседнюю клетку рескурсивно 
+            ret += t; // TODO?
             if (prop) {
                 velocity_flow.add(x, y, dx, dy, t);
-                last_use[x][y] = UT;
+                last_use[x][y] = UT; // помечаем изначальную клетку рассмотренной
                 // cerr << x << " " << y << " -> " << nx << " " << ny << " " << t << " / " << lim << "\n";
-                return {t, prop && end != pair(x, y), end};
+                return {t, prop && end != pair(x, y), end}; // TODO?
             }
         }
     }
-    last_use[x][y] = UT;
-    return {ret, 0, {0, 0}};
+    last_use[x][y] = UT; // помечаем изначальную клетку рассмотренной
+    return {ret, 0, {0, 0}}; // TODO?
 }
 
 Fixed random01() {
     return Fixed::from_raw((rnd() & ((1 << 16) - 1)));
 }
 
-void propagate_stop(int x, int y, bool force = false) {
-    if (!force) {
+// прикол что помечает какие-то клетки рассмотренным, но какие TODO ? 
+void propagate_stop(int x, int y, bool force = false) { // коорд текущей клетки и force TODO?
+    if (!force) { // TODO ?
         bool stop = true;
-        for (auto [dx, dy] : deltas) {
+        for (auto [dx, dy] : deltas) { // перебираем соседей
             int nx = x + dx, ny = y + dy;
-            if (field[nx][ny] != '#' && last_use[nx][ny] < UT - 1 && velocity.get(x, y, dx, dy) > 0) {
-                stop = false;
+            if (field[nx][ny] != '#' && last_use[nx][ny] < UT - 1 && velocity.get(x, y, dx, dy) > 0) { // если есть хотя бы одна клетка из которой ещё не всё вылилось (пересчиталось) что должно TODO ?
+                stop = false; // типо все рассмотрели - говорим что можно остановиться
                 break;
             }
         }
-        if (!stop) {
+        if (!stop) { // если в цикле решили остановиться - останавливаемся
             return;
         }
     }
-    last_use[x][y] = UT;
-    for (auto [dx, dy] : deltas) {
+    last_use[x][y] = UT; // помечаем клетку рассмотренной если <= velocity.get(x, y, dx, dy) или это бордюрчик или уже рассмотренна на последнем тике
+    for (auto [dx, dy] : deltas) { // итерируемся по соседним клеткам
         int nx = x + dx, ny = y + dy;
-        if (field[nx][ny] == '#' || last_use[nx][ny] == UT || velocity.get(x, y, dx, dy) > 0) {
+        if (field[nx][ny] == '#' || last_use[nx][ny] == UT || velocity.get(x, y, dx, dy) > 0) { // если бордюрчик/уже помечена/ещё не всё вытекло ?TODO - не рассматриваем
             continue;
         }
-        propagate_stop(nx, ny);
+        propagate_stop(nx, ny); // рекурсивно смотрим соседнюю
     }
 }
 
-Fixed move_prob(int x, int y) {
+Fixed move_prob(int x, int y) { // координаты клетки
     Fixed sum = 0;
-    for (size_t i = 0; i < deltas.size(); ++i) {
+    for (size_t i = 0; i < deltas.size(); ++i) { // перебираем соседей
         auto [dx, dy] = deltas[i];
         int nx = x + dx, ny = y + dy;
-        if (field[nx][ny] == '#' || last_use[nx][ny] == UT) {
+        if (field[nx][ny] == '#' || last_use[nx][ny] == UT) { // если бордюр или уже рассмотренна - не трогаем
             continue;
         }
-        auto v = velocity.get(x, y, dx, dy);
+        auto v = velocity.get(x, y, dx, dy); // смотрим сколько чего-то а ней TODO?
         if (v < 0) {
             continue;
         }
-        sum += v;
+        sum += v; // суммируем чего-то в клетке, если положительное число TODO ?
     }
     return sum;
 }
 
-struct ParticleParams {
+struct ParticleParams { // класс чтобы инициализировать/менять клетки поля TODO?
     char type;
     Fixed cur_p;
     array<Fixed, deltas.size()> v;
@@ -245,17 +252,17 @@ struct ParticleParams {
     }
 };
 
-bool propagate_move(int x, int y, bool is_first) {
-    last_use[x][y] = UT - is_first;
+bool propagate_move(int x, int y, bool is_first) { // клетки поля и is_first - вероятно корневая ли вершина TODO?
+    last_use[x][y] = UT - is_first; // TODO?
     bool ret = false;
     int nx = -1, ny = -1;
     do {
         std::array<Fixed, deltas.size()> tres;
         Fixed sum = 0;
-        for (size_t i = 0; i < deltas.size(); ++i) {
+        for (size_t i = 0; i < deltas.size(); ++i) { // перебираем соседей
             auto [dx, dy] = deltas[i];
             int nx = x + dx, ny = y + dy;
-            if (field[nx][ny] == '#' || last_use[nx][ny] == UT) {
+            if (field[nx][ny] == '#' || last_use[nx][ny] == UT) { // если бордюр или уже помеченная то TODO?
                 tres[i] = sum;
                 continue;
             }
@@ -283,16 +290,16 @@ bool propagate_move(int x, int y, bool is_first) {
         ret = (last_use[nx][ny] == UT - 1 || propagate_move(nx, ny, false));
     } while (!ret);
     last_use[x][y] = UT;
-    for (size_t i = 0; i < deltas.size(); ++i) {
+    for (size_t i = 0; i < deltas.size(); ++i) { // перебираем соседей
         auto [dx, dy] = deltas[i];
         int nx = x + dx, ny = y + dy;
-        if (field[nx][ny] != '#' && last_use[nx][ny] < UT - 1 && velocity.get(x, y, dx, dy) < 0) {
+        if (field[nx][ny] != '#' && last_use[nx][ny] < UT - 1 && velocity.get(x, y, dx, dy) < 0) { // если не бордюр, не была ещё рассмотренная и что-то в ней есть TODO?
             propagate_stop(nx, ny);
         }
     }
-    if (ret) {
-        if (!is_first) {
-            ParticleParams pp{};
+    if (ret) { // TODO?
+        if (!is_first) { // TODO?
+            ParticleParams pp{}; // TODO?
             pp.swap_with(x, y);
             pp.swap_with(nx, ny);
             pp.swap_with(x, y);
@@ -301,12 +308,12 @@ bool propagate_move(int x, int y, bool is_first) {
     return ret;
 }
 
-int dirs[N][M]{};
+int dirs[N][M]{}; // TODO?
 
 int main() {
-    rho[' '] = 0.01;
+    rho[' '] = 0.01; // задаём константы
     rho['.'] = 1000;
-    Fixed g = 0.1;
+    Fixed g = 0.1; // типо g физическая
 
     for (size_t x = 0; x < N; ++x) {
         for (size_t y = 0; y < M; ++y) {
