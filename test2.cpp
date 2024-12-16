@@ -3,9 +3,10 @@
 #include <cstdio>
 #include <vector>
 #include <functional>
+#include <limits>
 
 using namespace std;
-//#define TYPES FIXED(10, 10),FIXED(20, 20)
+#define TYPES FIXED(10, 10),FIXED(20, 20),FLOAT
 /*
 class Fixed_w {
 public:
@@ -49,52 +50,185 @@ constexpr std::vector<Fixed_t> getTypes() {
     return res;
 }*/
 
-//typename T, 
 template<std::size_t N, std::size_t K, bool F>
 struct Fixed {
-    using T = std::conditional<N <= 8,  int8_t, std::conditional<N <= 16,  int16_t, int16_t>>::type;
-    constexpr Fixed(int v): v(v << K) {}
-    constexpr Fixed(float f): v(f * (1 << K)) {}
-    constexpr Fixed(double f): v(f * (1 << K)) {}
+    using T = std::conditional<N <= 8,  int8_t, typename std::conditional<N <= 16,  int16_t, typename std::conditional<N <= 32,  int32_t, int64_t>::type>::type>::type;
+    using T2 = std::conditional<N <= 8,  int16_t, typename std::conditional<N <= 16,  int32_t, int64_t>::type>::type;
+    constexpr Fixed(int v_): v(v_ << K) {}
+    constexpr Fixed(float f_): v(f_ * (1 << K)) {}
+    constexpr Fixed(double f_): v(f_ * (1 << K)) {}
+    template<std::size_t No, std::size_t Ko, bool Fo>
+    constexpr Fixed(Fixed<No, Ko, Fo> o): v(o.to_double()*(1<<K)) {}
     constexpr Fixed(): v(0) {}
 
-    static constexpr Fixed from_raw(int32_t x) {
+    constexpr double to_double() {
+        return v / (double) (1 << K);
+    }
+
+    static constexpr Fixed from_raw(T x) {
         Fixed ret;
         ret.v = x;
         return ret;
-    } 
-
+    }
     T v;
 
     auto operator<=>(const Fixed&) const = default;
     bool operator==(const Fixed&) const = default;
 
-    Fixed operator+(Fixed b) {
-        return Fixed::from_raw(v + b.v);
-    }
+    //static constexpr Fixed inf = Fixed::from_raw(std::numeric_limits<T>::max());
+    //static constexpr Fixed eps = Fixed::from_raw(deltas.size());
 
-    Fixed& operator=(Fixed b) {
-        v = b.v;
+    Fixed operator+(Fixed o) {
+        return from_raw(v + o.v);
+    }
+    Fixed operator-(Fixed o) {
+        return from_raw(v - o.v);
+    }
+    Fixed operator*(Fixed o) {
+        return Fixed::from_raw(((T2) v * o.v) >> K);
+    }
+    Fixed operator/(Fixed o) {
+        return Fixed::from_raw(((T2) v << K) / o.v);
+    }
+    Fixed& operator=(Fixed o) {
+        this->v = o.v;
         return *this;
     }
+    Fixed &operator+=(Fixed o) {
+        return *this = *this + o;
+    }
 
-    Fixed operator-(Fixed b) {
-        return Fixed::from_raw(v - b.v);
+    Fixed &operator-=(Fixed o) {
+        return *this = *this - o;
+    }
+
+    Fixed &operator*=(Fixed o) {
+        return *this = *this * o;
+    }
+
+    Fixed &operator/=(Fixed o) {
+        return *this = *this / o;
+    }
+
+    Fixed operator-() {
+        return Fixed::from_raw(-v);
     }
 };
+
+template<std::size_t N, std::size_t K, bool F>
+Fixed<N,K,F> abs(Fixed<N,K,F> f) {
+    if (f.v < 0) {
+        f.v = -f.v;
+    }
+    return f;
+}
+
+template<std::size_t N, std::size_t K, bool F>
+double operator+(double o, Fixed<N,K,F> t) {
+    return t.to_double() + o;
+}
+
+template<std::size_t N, std::size_t K, bool F>
+double operator-(double o, Fixed<N,K,F> t) {
+    return o - t.to_double();
+}
+
+template<std::size_t N, std::size_t K, bool F>
+double operator*(double o, Fixed<N,K,F> t) {
+    return o * t.to_double();
+}
+
+template<std::size_t N, std::size_t K, bool F>
+double operator/(double o, Fixed<N,K,F> t) {
+    return o / t.to_double();
+}
+
+template<std::size_t N, std::size_t K, bool F>
+double& operator+=(double& o, Fixed<N,K,F> t) {
+    return o = t.to_double() + o;
+}
+
+template<std::size_t N, std::size_t K, bool F>
+double& operator-=(double o, Fixed<N,K,F> t) {
+    return o = o - t.to_double();
+}
+
+template<std::size_t N, std::size_t K, bool F>
+double& operator*=(double o, Fixed<N,K,F> t) {
+    return o = o * t.to_double();
+}
+
+template<std::size_t N, std::size_t K, bool F>
+double operator/(double& o, Fixed<N,K,F> t) {
+    return o = o / t.to_double();
+}
 
 template<std::size_t N, std::size_t K, bool F>
 std::ostream& operator<<(std::ostream &out, const Fixed<N,K,F>& f) {
     return out << f.v / (double) (1 << K);
 }
 
-template<typename T1, typename T2, typename T3>
-void test_func(T1 a, T2 b, T3 c) {
-    a = a + a;
-    b = b + b;
-    c = c + c;
-    std::cout << a <<  ' ' << b << ' ' << c << std::endl;
+//typename T, 
+/*
+template<std::size_t N, std::size_t K, bool F>
+struct Fixed {
+    using T = std::conditional<N <= 8,  int8_t, typename std::conditional<N <= 16,  int16_t, typename std::conditional<N <= 32,  int32_t, int64_t>::type>::type>::type;
+    constexpr Fixed(int v_): v(v_ << K) {}
+    constexpr Fixed(float f_): v(f_ * (1 << K)) {}
+    constexpr Fixed(double f_): v(f_ * (1 << K)) {}
+    template<std::size_t No, std::size_t Ko, bool Fo>
+    constexpr Fixed(Fixed<No, Ko, Fo> o): v(o.to_double()*(1<<K)) {}
+    constexpr Fixed(): v(0) {}
+
+    constexpr double to_double() {
+        return v / (double) (1 << K);
+    }
+
+    static constexpr Fixed from_raw(T x) {
+        Fixed ret;
+        ret.v = x;
+        return ret;
+    }
+
+    T v;
+
+    auto operator<=>(const Fixed&) const = default;
+    bool operator==(const Fixed&) const = default;
+
+    //static constexpr Fixed inf = Fixed::from_raw(std::numeric_limits<int32_t>::max());
+    Fixed operator+(Fixed o) {
+        return from_raw(o.v + v);
+    }
+    Fixed& operator=(Fixed o) {
+        this->v = o.v;
+        return *this;
+    }
+};
+
+
+template<std::size_t N, std::size_t K, bool F>
+double operator+(double o, Fixed<N,K,F> t) {
+    return t.to_double() + o;
 }
+
+template<std::size_t N, std::size_t K, bool F>
+std::ostream& operator<<(std::ostream &out, const Fixed<N,K,F>& f) {
+    return out << f.v / (double) (1 << K);
+}*/
+
+
+/*
+template <std::size_t N, std::size_t K, bool F>
+constexpr Fixed<N,K,F>::Fixed(double f) {//: v(64 * (1 << 32))
+}
+
+template<>
+template <std::size_t N=32, std::size_t K=32, bool F=false>
+Fixed<N,K,F>::Fixed(double f) {//: v(64 * (1 << 32))
+}*/
+
+//template<>
+//constexpr Fixed<64, 32, false>::Fixed<64, 32, false>(double f): v(f * (1 << K)) {}
 
 
 //constexpr const size_t possibleTypes[1][2] = {{10, 10}};
@@ -102,60 +236,58 @@ void test_func(T1 a, T2 b, T3 c) {
 //const std::vector<Fixed_t> types = getTypes();
 
 template<std::size_t N, std::size_t K, bool F>
-void setType(auto& func, int n, int k, bool f) {
+void setTypeFixed(auto& func, int n, int k, bool f) {
     if (n == N && k == K && f == F) {
         func.template operator()<Fixed<N,K,F>>();
     }
 }
 
-void FixedSetType(size_t n, size_t k, bool f, auto& func) {
-    //f.template operator()<Fixed<10, 10, false>>();
-    /*for (auto& t : types) {
-        if (N == t.N && K == t.K && F == t.F) {
-            f.template operator()<Fixed<t.N, t.K, t.F>>();
-            return;
-        }
-        if (N == 10 && K == 10) {
-            f.template operator()<Fixed<int, 10, 10>>();
-        }
-    }*/
-   //#define FIXED(N, K) if (n == N && k == K && !f) { func.template operator()<Fixed<N,K,false>>();}
-   //TYPES;
-   //#undef FIXED
-   //#define FIXED(N, K) if (n == N && k == K && !f) { func.template operator()<Fixed<N,K,false>>();}
-   //#undef FIXED,
-    #define FIXED(N, K) setType<N,K,false>(f, n, k, f)
-    TYPES;
-    #undef FIXED
-}
-
-
-
-void setType(char* type_b, std::string_view type, auto f) {
+void setTypeFloat(auto& func, std::string_view type) {
     if (type == "FLOAT") {
-        f.template operator()<float>();
-    } else if (type == "DOUBLE") {
-        f.template operator()<double>();
-    } else {
-        size_t N, K;
-        int res = sscanf(type_b, "FIXED(%zu, %zu)", &N, &K);
-        if (res == 0) {
-            throw std::runtime_error("error");
-            //scanf(type, "FAST_FIXED(%u, %u)", &N, &K);
-            //f.template operator()<FastFixed<N, K>>();
-            return;
-        }
-        FixedSetType(N, K, false, f);
-        ////(type == "fixed") {
-        //f.template operator()<Fixed<10, 10>>();
+        func.template operator()<float>();
     }
 }
 
+void setTypeDouble(auto& func, std::string_view type) {
+    if (type == "DOUBLE") {
+        func.template operator()<double>();
+    }
+}
+
+void setType(char* type_b, std::string type, auto func) {
+    std::size_t n = std::numeric_limits<size_t>::max(), k = n;
+    bool f;
+    if (type != "FLOAT" && type != "DOUBLE") {
+        int res = sscanf(type_b, "FIXED(%zu, %zu)", &n, &k);
+        if (res == 0) {
+            throw std::runtime_error("error");
+            return;
+        }
+    }
+    #define FIXED(N, K) setTypeFixed<N,K,false>(func, n, k, f)
+    #define FLOAT setTypeFloat(func, type)
+    #define DOUBLE setTypeDouble(func, type)
+    TYPES;
+    #undef FIXED
+    #undef FLOAT
+    #undef DOUBLE
+}
+
+template<typename T1, typename T2, typename T3>
+void test_func(T1 a, T2 b, T3 c) {
+    a /= a + b;
+    b -= b + abs(b);
+    c = c + c;
+    std::cout << a <<  ' ' << b << ' ' << c << std::endl;
+}
+
 int main() {
+    //Fixed<10, 10, false> f = 1;
+    //f = f + 2.3;
     auto first_type = "FIXED(10, 10)";
     char first_type_b[] = "FIXED(10, 10)";
-    auto second_type = "FIXED(10, 10)";
-    char second_type_b[] = "FIXED(10, 10)";
+    auto second_type = "FIXED(20, 20)";
+    char second_type_b[] = "FIXED(20, 20)";
     auto third_type = "FLOAT";
     char third_type_b[] = "FLOAT";
     setType(first_type_b, first_type, [&]<typename T1>() {
