@@ -5,3 +5,11 @@ run:
 runTest:
 	g++ -DDEBUG="true" -std=c++2b test.cpp
 	./a.out
+
+runTest2:
+	g++ -DDEBUG="true" -std=c++2b -DTYPES="FIXED(10, 10),FIXED(20, 20)" test2.cpp
+	./a.out
+
+runTest2E:
+	g++ -DDEBUG="true" -std=c++2b -E -DTYPES="FIXED(10, 10),FIXED(20, 20),FLOAT" test2.cpp
+	./a.out

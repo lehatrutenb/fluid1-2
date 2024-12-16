@@ -325,7 +325,7 @@ int main() {
         }
     }
 
-    for (size_t i = 0; i < T; ++i) {
+    for (size_t i = 0; i < T; ++i) { // итерируемся по тикам
         
         Fixed total_delta_p = 0;
         // Apply external forces

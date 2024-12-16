@@ -1,18 +1,58 @@
-//#include <map>
 #include <string>
 #include <iostream>
 #include <cstdio>
-#define TYPES FIXED(10, 10),FIXED(20, 20)
-#define COMMA ,
-#define TCOMMA ;
-#define COMMA TCOMMA
-TYPES
-#define FIXED(N, K) 
+#include <vector>
+#include <functional>
 
 using namespace std;
+//#define TYPES FIXED(10, 10),FIXED(20, 20)
+/*
+class Fixed_w {
+public:
+    virtual void setFType(auto func) = 0;
+};
 
-template<typename T, std::size_t N, std::size_t K>
+template<std::size_t N, std::size_t K, bool F>
+class Fixed_wc : Fixed_w {
+    Fixed_wc(){};
+    setFType(auto func) override {
+        f.template operator()<Fixed<N,K,F>>();
+    }
+};
+
+
+std::array<, 2>
+
+
+constexpr std::vector<Fixed_t> getTypes() {
+    std::vector<Fixed_t> res;
+    std::string s = "TYPES";
+    for (int i = 0; i < s.size(); i++) {
+        if (s[i] == '(') {
+            std::string cur = "";
+            std::size_t n, k;
+            for (int j = i + 1; j < s.size(); j++) {
+                if (s[j] == ' ') {
+                    n = stoi(cur);
+                    cur = "";
+                }
+                if (s[j] == ')') {
+                    k = stoi(cur);
+                    res.push_back({n, k, true});
+                    res.push_back({n, k, false});
+                    Fixed<n,k, false> res;
+                    break;
+                }
+            }
+        }
+    }
+    return res;
+}*/
+
+//typename T, 
+template<std::size_t N, std::size_t K, bool F>
 struct Fixed {
+    using T = std::conditional<N <= 8,  int8_t, std::conditional<N <= 16,  int16_t, int16_t>>::type;
     constexpr Fixed(int v): v(v << K) {}
     constexpr Fixed(float f): v(f * (1 << K)) {}
     constexpr Fixed(double f): v(f * (1 << K)) {}
@@ -43,8 +83,8 @@ struct Fixed {
     }
 };
 
-template<typename T, std::size_t N, std::size_t K>
-std::ostream& operator<<(std::ostream &out, const Fixed<T,N,K>& f) {
+template<std::size_t N, std::size_t K, bool F>
+std::ostream& operator<<(std::ostream &out, const Fixed<N,K,F>& f) {
     return out << f.v / (double) (1 << K);
 }
 
@@ -59,18 +99,37 @@ void test_func(T1 a, T2 b, T3 c) {
 
 //constexpr const size_t possibleTypes[1][2] = {{10, 10}};
 
-void FixedSetType(size_t N, size_t K, auto f) {
-    f.template operator()<Fixed<int, 10, 10>>();
-    /*for (int ind = 0; ind < 1; ind++) {
-        if (N == possibleTypes[ind][0] && K == possibleTypes[ind][1]) {
-            f.template operator()<Fixed<int8_t, N, K>>();
+//const std::vector<Fixed_t> types = getTypes();
+
+template<std::size_t N, std::size_t K, bool F>
+void setType(auto& func, int n, int k, bool f) {
+    if (n == N && k == K && f == F) {
+        func.template operator()<Fixed<N,K,F>>();
+    }
+}
+
+void FixedSetType(size_t n, size_t k, bool f, auto& func) {
+    //f.template operator()<Fixed<10, 10, false>>();
+    /*for (auto& t : types) {
+        if (N == t.N && K == t.K && F == t.F) {
+            f.template operator()<Fixed<t.N, t.K, t.F>>();
             return;
         }
         if (N == 10 && K == 10) {
             f.template operator()<Fixed<int, 10, 10>>();
         }
     }*/
+   //#define FIXED(N, K) if (n == N && k == K && !f) { func.template operator()<Fixed<N,K,false>>();}
+   //TYPES;
+   //#undef FIXED
+   //#define FIXED(N, K) if (n == N && k == K && !f) { func.template operator()<Fixed<N,K,false>>();}
+   //#undef FIXED,
+    #define FIXED(N, K) setType<N,K,false>(f, n, k, f)
+    TYPES;
+    #undef FIXED
 }
+
+
 
 void setType(char* type_b, std::string_view type, auto f) {
     if (type == "FLOAT") {
@@ -86,7 +145,7 @@ void setType(char* type_b, std::string_view type, auto f) {
             //f.template operator()<FastFixed<N, K>>();
             return;
         }
-        FixedSetType(N, K, f);
+        FixedSetType(N, K, false, f);
         ////(type == "fixed") {
         //f.template operator()<Fixed<10, 10>>();
     }
@@ -109,5 +168,4 @@ int main() {
             });
         });
     });
-    return 0;
 }
