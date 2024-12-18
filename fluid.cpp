@@ -1,3 +1,4 @@
+#pragma GCC optimize("Ofast,unroll-loops")
 #include <cstdint>
 #include <limits>
 #include <utility>
@@ -5,7 +6,9 @@
 #include <random>
 #include <iostream>
 #include <ranges>
-#define TYPES FIXED(10, 10),FIXED(20, 20),FLOAT
+#include <algorithm>
+#include <cstring>
+#define TYPES FIXED(20, 10),FIXED(20, 20),FLOAT
 
 using namespace std;
 
@@ -173,44 +176,47 @@ Fixed<N,K,F> abs(Fixed<N,K,F> f) {
     return f;
 }
 
-template<typename TO, typename FR>
-TO tryConv(FR x) {
-    return TO(tryConv<double, FR> (x));
+template<std::size_t N, std::size_t K, bool F>
+constexpr void tryConv(Fixed<N,K,F> x, double& res) {
+    res = x.to_double();
 }
 
 template<std::size_t N, std::size_t K, bool F>
-double tryConv(Fixed<N,K,F> x) {
-    return x.to_double();
+constexpr void tryConv(Fixed<N,K,F> x, float& res) {
+    res = x.to_double();
 }
 
 template<std::size_t N, std::size_t K, bool F>
-Fixed<N,K,F> tryConv(double x) {
-    return Fixed<N,K,F>(x);
+constexpr void tryConv(double x, Fixed<N,K,F>& res) {
+    res = Fixed<N,K,F>(x);
 }
 
-template<std::size_t N, std::size_t K, bool F>
-Fixed<N,K,F> tryConv(float x) {
-    return Fixed<N,K,F>(x);
+constexpr void tryConv(double x, float& res) {
+    res = x;
+}
+
+constexpr void tryConv(double x, double& res) {
+    res = x;
 }
 
 template<std::size_t N, std::size_t K, bool F, std::size_t No, std::size_t Ko, bool Fo>
-Fixed<N,K,F> tryConv(Fixed<No,Ko,Fo> x) {
-    return Fixed<N,K,F>(x);
+constexpr void tryConv(Fixed<No,Ko,Fo> x, Fixed<N,K,F>& res) {
+    res = Fixed<N,K,F>(x);
 }
 
 
 template<std::size_t N, std::size_t K, bool F>
-double operator+(double o, Fixed<N,K,F> t) {
+constexpr double operator+(double o, Fixed<N,K,F> t) {
     return t.to_double() + o;
 }
 
 template<std::size_t N, std::size_t K, bool F>
-double operator-(double o, Fixed<N,K,F> t) {
+constexpr double operator-(double o, Fixed<N,K,F> t) {
     return o - t.to_double();
 }
 
 template<std::size_t N, std::size_t K, bool F>
-double operator*(double o, Fixed<N,K,F> t) {
+constexpr double operator*(double o, Fixed<N,K,F> t) {
     return o * t.to_double();
 }
 
@@ -231,12 +237,17 @@ float& operator+=(float& o, Fixed<N,K,F> t) {
 }
 
 template<std::size_t N, std::size_t K, bool F>
-double& operator-=(double o, Fixed<N,K,F> t) {
+double& operator-=(double& o, Fixed<N,K,F> t) {
     return o = o - t.to_double();
 }
 
 template<std::size_t N, std::size_t K, bool F>
-double& operator*=(double o, Fixed<N,K,F> t) {
+float& operator-=(float& o, Fixed<N,K,F> t) {
+    return o = o - t.to_double();
+}
+
+template<std::size_t N, std::size_t K, bool F>
+double& operator*=(double& o, Fixed<N,K,F> t) {
     return o = o * t.to_double();
 }
 
@@ -290,7 +301,13 @@ tuple<VFT, bool, pair<int, int>> propagate_flow(int x, int y, VFT lim) { // ко
                 continue;
             }
             // assert(v >= velocity_flow.get(x, y, dx, dy));
-            VFT vp = lim < (cap - flow) ? (VFT) lim : tryConv<VFT, VT>(cap-flow); // TODO?
+            VFT vp;
+            if (lim <= (cap - flow)) {
+                vp = lim;
+            } else {
+                tryConv(cap-flow, vp);
+            }
+
             if (last_use[nx][ny] == UT - 1) { // видимо если была подсчитама в пред разы то пересчёт простой TODO?
                 velocity_flow.add(x, y, dx, dy, vp); // добавляем к вытеканию сколько вытечет в напр dx dy TODDO?
                 last_use[x][y] = UT; // помечаем изначальную клетку рассмотренной
@@ -312,7 +329,7 @@ tuple<VFT, bool, pair<int, int>> propagate_flow(int x, int y, VFT lim) { // ко
 }
 
 double random01() {
-    return (rnd() & ((1 << 16) - 1));
+    return rnd()/(double)std::numeric_limits<uint_fast32_t>::max();
 }
 
 // прикол что помечает какие-то клетки рассмотренным, но какие TODO ? 
@@ -430,7 +447,8 @@ double dirs[N][M]{}; // TODO?
 void run() {
     rho[' '] = 0.01; // задаём константы
     rho['.'] = 1000;
-    VT g = 0.1; // типо g физическая
+    //VT g = 0.1; // типо g физическая
+    VT g = 1;
 
     for (size_t x = 0; x < N; ++x) {
         for (size_t y = 0; y < M; ++y) {
@@ -473,7 +491,10 @@ void run() {
                         }
                         force -= contr * rho[(int) field[nx][ny]];
                         contr = 0;
-                        velocity.add(x, y, dx, dy, tryConv<VT, PT>((force) / rho[(int) field[x][y]]));
+                        
+                        VT in_;
+                        tryConv((force) / rho[(int) field[x][y]], in_);
+                        velocity.add(x, y, dx, dy, in_);
                         p[x][y] -= force / VT(dirs[x][y]);
                         total_delta_p -= force / VT(dirs[x][y]);
                     }
@@ -509,7 +530,9 @@ void run() {
                     auto new_v = velocity_flow.get(x, y, dx, dy);
                     if (old_v > VT(0)) {
                         assert(new_v <= old_v);
-                        velocity.get(x, y, dx, dy) = tryConv<VT, VFT>(new_v);
+                        VT in_;
+                        tryConv(new_v, in_);
+                        velocity.get(x, y, dx, dy) = in_;
                         auto force = (old_v - new_v) * rho[(int) field[x][y]];
                         if (field[x][y] == '.')
                             force *= 0.8;
@@ -530,6 +553,7 @@ void run() {
         for (size_t x = 0; x < N; ++x) {
             for (size_t y = 0; y < M; ++y) {
                 if (field[x][y] != '#' && last_use[x][y] != UT) {
+                    //std::cout << random01() << ' ' << move_prob(x, y) << std::endl;
                     if (random01() < move_prob(x, y)) {
                         prop = true;
                         propagate_move(x, y, true);
@@ -598,12 +622,12 @@ void setType(char* type_b, std::string_view type, auto func) {
 }
 
 int main() {
-    auto first_type = "FIXED(10, 10)";
-    char first_type_b[] = "FIXED(10, 10)";
-    auto second_type = "FIXED(10, 10)";
-    char second_type_b[] = "FIXED(10, 10)";
-    auto third_type = "FLOAT";
-    char third_type_b[] = "FLOAT";
+    auto first_type = "FIXED(20, 10)";
+    char first_type_b[] = "FIXED(20, 10)";
+    auto second_type = "FIXED(20, 10)";
+    char second_type_b[] = "FIXED(20, 10)";
+    auto third_type = "FIXED(20, 10)";
+    char third_type_b[] = "FIXED(20, 10)";
     typeSetter::setType(first_type_b, first_type, [&]<typename T1>() {
         typeSetter::setType(second_type_b, second_type, [&]<typename T2>() {
             typeSetter::setType(third_type_b, third_type, [&]<typename T3>() {
