@@ -8,7 +8,7 @@
 #include <ranges>
 #include <algorithm>
 #include <cstring>
-#define TYPES FIXED(20, 10),FIXED(20, 20),FLOAT
+#define TYPES FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT
 
 using namespace std;
 
@@ -78,8 +78,15 @@ mt19937 rnd(1303);
 
 template<std::size_t N, std::size_t K, bool F>
 struct Fixed {
-    using T = std::conditional<N <= 8,  int8_t, typename std::conditional<N <= 16,  int16_t, typename std::conditional<N <= 32,  int32_t, int64_t>::type>::type>::type;
-    using T2 = std::conditional<N <= 8,  int16_t, typename std::conditional<N <= 16,  int32_t, int64_t>::type>::type;
+    using T_ = std::conditional<N <= 8, int8_t, typename std::conditional<N <= 16, int16_t, typename std::conditional<N <= 32, int32_t, int64_t>::type>::type>::type;
+    using T2_ = std::conditional<N <= 8, int16_t, typename std::conditional<N <= 16, int32_t, int64_t>::type>::type;
+
+    using TF_ = std::conditional<N <= 8, int_fast8_t, typename std::conditional<N <= 16, int_fast16_t, typename std::conditional<N <= 32, int_fast32_t, int_fast64_t>::type>::type>::type;
+    using TF2_ = std::conditional<N <= 8, int_fast16_t, typename std::conditional<N <= 16, int_fast32_t, int_fast64_t>::type>::type;
+
+    using T = std::conditional<F, TF_, T_>::type;
+    using T2 = std::conditional<F, TF2_, T2_>::type;
+
     constexpr Fixed(int v_): v(v_ << K) {}
     constexpr Fixed(float f_): v(f_ * (1 << K)) {}
     constexpr Fixed(double f_): v(f_ * (1 << K)) {}
@@ -622,12 +629,12 @@ void setType(char* type_b, std::string_view type, auto func) {
 }
 
 int main() {
-    auto first_type = "FIXED(20, 10)";
-    char first_type_b[] = "FIXED(20, 10)";
-    auto second_type = "FIXED(20, 10)";
-    char second_type_b[] = "FIXED(20, 10)";
-    auto third_type = "FIXED(20, 10)";
-    char third_type_b[] = "FIXED(20, 10)";
+    auto first_type = "FAST_FIXED(20, 10)";
+    char first_type_b[] = "FAST_FIXED(20, 10)";
+    auto second_type = "FAST_FIXED(20, 10)";
+    char second_type_b[] = "FAST_FIXED(20, 10)";
+    auto third_type = "FAST_FIXED(20, 10)";
+    char third_type_b[] = "FAST_FIXED(20, 10)";
     typeSetter::setType(first_type_b, first_type, [&]<typename T1>() {
         typeSetter::setType(second_type_b, second_type, [&]<typename T2>() {
             typeSetter::setType(third_type_b, third_type, [&]<typename T3>() {
