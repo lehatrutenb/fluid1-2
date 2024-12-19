@@ -1,6 +1,6 @@
 run:
 	g++ -DDEBUG="true" -std=c++2b fluid.cpp
-	./a.out
+	./a.out --p-type="FLOAT" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FIXED(20, 10)" --n=36 --m=84 --field-file="field"
 
 runTest:
 	g++ -DDEBUG="true" -std=c++2b test.cpp

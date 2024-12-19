@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstring>
 #define TYPES FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT
+#define SIZES S(1920,1080),S(36,84)
 
 using namespace std;
 
@@ -229,10 +230,11 @@ std::ostream& operator<<(std::ostream &out, const Fixed<N,K,F>& f) {
     return out << f.v / (double) (1 << K);
 }
 
-
+/*
 template<std::size_t N, std::size_t M, typename PT>
 struct FieldStatic {
-    FieldStatic(std::size_t _, std::size_t __){}
+    FieldStatic(){}
+    void SetSize(std::size_t _, std::size_t __){}
     constexpr static char f[N][M];
     static PT point[N][M]{};
     static PT old_point[N][M];
@@ -244,34 +246,84 @@ struct FieldStatic {
 
 template<typename PT>
 struct FieldDinamic {
-    FieldDinamic(std::size_t N__, std::size_t M__) : N_(N__), M_(M__) {
-
+    FieldDinamic(){}
+    void SetSize(std::size_t N__, std::size_t M__) {
+        N_ = N__;
+        M_ = M__;
         f.resize(0);
         f.resize(N_, std::vector<char> (M_));
         point.resize(N_, std::vector<PT> (M_));
         // assign to point zeroes???? TODO CHECK
         old_point.resize(N_, std::vector<PT> (M_));
     }
-    FieldDinamic(){}
+    //FieldDinamic(){}
     static std::vector<std::vector<char>> f;
     static std::vector<std::vector<PT>> point;
     static std::vector<std::vector<PT>> old_point;
-    const std::size_t N_;
-    const std::size_t M_;
+    std::size_t N_;
+    std::size_t M_;
     constexpr const static bool isStatic = false;
-};
+};*/
 
-template<typename PT, typename VT, typename VFT, typename FT, std::size_t NStatic, std::size_t MStatic>
+template<typename PT, typename VT, typename VFT, bool IsStatic, std::size_t NStatic, std::size_t MStatic>
 struct fluidEmulator {
+
+std::size_t N, M;
+
+fluidEmulator(std::size_t N_, std::size_t M_) : N(N_), M(M_) {}
+fluidEmulator() {
+    N = NStatic;
+    M = MStatic;
+}
+//constexpr static char f[N][M];
+
+using FDinamic = std::vector<std::vector<char>>;
+using FArr = std::conditional<IsStatic,std::array<std::array<char, MStatic>, NStatic>, FDinamic>::type;
+
+FArr field;
+
+void initField() {
+    if constexpr (!IsStatic) {
+        field.resize(N, std::vector<char>(M));
+    } else {
+        for (int i = 0; i < NStatic; i++) {
+            for (int j = 0; j < MStatic; j++) {
+                field[i][j] = 0; // TODO CHANGE
+            }
+        }
+    }
+}
+
+using PDinamic = std::vector<std::vector<PT>>;
+using PArr = std::conditional<IsStatic,std::array<std::array<PT, MStatic>, NStatic>, PDinamic>::type;
+
+//static PT point[N][M]{};
+//static PT old_point[N][M];
+PArr point, old_point;
+
+void initPoint() {
+    if constexpr (!IsStatic) {
+        point.resize(N, std::vector<PT>(M));
+        old_point.resize(N, std::vector<PT>(M));
+    } else {
+        for (int i = 0; i < NStatic; i++) {
+            for (int j = 0; j < MStatic; j++) {
+                point[i][j] = PT(); // TODO CHANGE
+            }
+        }
+    }
+}
 
 //std::size_t N, std::size_t M;
 //const static auto& field = FT::f;
+/*
 #define isStatic FT::isStatic
 #define field FT::f
-#define point_ FT::point
+#define point FT::point
 #define old_point FT::old_point
 #define N FT{}.N_
 #define M FT{}.M_
+*/
 
 /*
 char field[N][M + 1] = { // само поле M + 1 хз почему
@@ -320,16 +372,14 @@ struct VectorField { // changed Fixed->T
     //array<T, deltas.size()> v[N][M]; // TODO вероятно для каждой клетки какой-то поток в разные стороны
     //using TStatic = std::array<std::array<std::array<T, deltas.size()>, M>, N>;
     using TDinamic = std::vector<std::vector<array<T, deltas.size()>>>;
-    using TArr = std::conditional<isStatic, std::array<std::array<std::array<T, deltas.size()>, MStatic>, NStatic>, TDinamic>::type;
+    using TArr = std::conditional<IsStatic, std::array<std::array<std::array<T, deltas.size()>, MStatic>, NStatic>, TDinamic>::type;
 
-    template<bool isStatic_, enable_if<!isStatic_>>
-    VectorField() {
-        v.resize(N, std::vector<array<T, deltas.size()>>(M));
-    }
+    void initVectorField(std::size_t N, std::size_t M) {
+        if constexpr (!IsStatic) {
+            v.resize(N, std::vector<array<T, deltas.size()>>(M));
+        } else {
 
-    template<bool isStatic_, enable_if<isStatic_>>
-    VectorField() {
-
+        }
     }
 
     TArr v;
@@ -346,25 +396,23 @@ struct VectorField { // changed Fixed->T
 };
 
 //VectorField<VT> testt = VectorField<VT> ();
-VectorField<VT> velocity<isStatic>{};
-VectorField<VFT> velocity_flow = VectorField<VFT>(); // TODO ?
+VectorField<VT> velocity;
+VectorField<VFT> velocity_flow; // TODO ?
 
 using LUDinamic = std::vector<std::vector<int>>;
-using LUArr = std::conditional<isStatic,std::array<std::array<int, MStatic>, NStatic>, LUDinamic>::type;
+using LUArr = std::conditional<IsStatic,std::array<std::array<int, MStatic>, NStatic>, LUDinamic>::type;
 
 //int last_use[N][M]{}; // базовый used для dfs
 LUArr last_use;
 
-template<enable_if<!isStatic>>
 void initLastUse() {
-    last_use.resize(N, std::vector<int>(M));
-}
-
-template<enable_if<isStatic>>
-constexpr void initLastUse() {
-    for (int i = 0; i < NStatic; i++) {
-        for (int j = 0; j < MStatic; j++) {
-            last_use[i][j] = 0;
+    if constexpr (!IsStatic) {
+        last_use.resize(N, std::vector<int>(M));
+    } else {
+        for (int i = 0; i < NStatic; i++) {
+            for (int j = 0; j < MStatic; j++) {
+                last_use[i][j] = 0;
+            }
         }
     }
 }
@@ -376,6 +424,9 @@ tuple<VFT, bool, pair<int, int>> propagate_flow(int x, int y, VFT lim) { // ко
     VFT ret = 0;
     for (auto [dx, dy] : deltas) { // перебираем соседние клетки к нашей
         int nx = x + dx, ny = y + dy; // коорд соседних клеток
+        if (!checkSz(nx, ny)) {
+            continue;
+        }
         if (field[nx][ny] != '#' && last_use[nx][ny] < UT) { // если рассм клетка не препятствие и не была помечена раньше то идём внутрь
             VT cap = velocity.get(x, y, dx, dy);
             VFT flow = velocity_flow.get(x, y, dx, dy);
@@ -420,6 +471,9 @@ void propagate_stop(int x, int y, bool force = false) { // коорд текущ
         bool stop = true;
         for (auto [dx, dy] : deltas) { // перебираем соседей
             int nx = x + dx, ny = y + dy;
+            if (!checkSz(nx, ny)) {
+                continue;
+            }
             if (field[nx][ny] != '#' && last_use[nx][ny] < UT - 1 && velocity.get(x, y, dx, dy) > VT(0)) { // если есть хотя бы одна клетка из которой ещё не всё вылилось (пересчиталось) что должно TODO ?
                 stop = false; // типо все рассмотрели - говорим что можно остановиться
                 break;
@@ -432,6 +486,9 @@ void propagate_stop(int x, int y, bool force = false) { // коорд текущ
     last_use[x][y] = UT; // помечаем клетку рассмотренной если <= velocity.get(x, y, dx, dy) или это бордюрчик или уже рассмотренна на последнем тике
     for (auto [dx, dy] : deltas) { // итерируемся по соседним клеткам
         int nx = x + dx, ny = y + dy;
+        if (!checkSz(nx, ny)) {
+            continue;
+        }
         if (field[nx][ny] == '#' || last_use[nx][ny] == UT || velocity.get(x, y, dx, dy) > VT(0)) { // если бордюрчик/уже помечена/ещё не всё вытекло ?TODO - не рассматриваем
             continue;
         }
@@ -444,6 +501,9 @@ VT move_prob(int x, int y) { // координаты клетки
     for (size_t i = 0; i < deltas.size(); ++i) { // перебираем соседей
         auto [dx, dy] = deltas[i];
         int nx = x + dx, ny = y + dy;
+        if (!checkSz(nx, ny)) {
+            continue;
+        }
         if (field[nx][ny] == '#' || last_use[nx][ny] == UT) { // если бордюр или уже рассмотренна - не трогаем
             continue;
         }
@@ -461,9 +521,9 @@ struct ParticleParams { // класс чтобы инициализироват�
     PT cur_p;
     array<VT, deltas.size()> v;
 
-    void swap_with(auto point__, VectorField<VT>& velocity, int x, int y) {
-        swap(field[x][y], type);
-        swap(point__[x][y], cur_p);
+    void swap_with(auto& point_, VectorField<VT>& velocity, auto& field_, int x, int y) {
+        swap(field_[x][y], type);
+        swap(point_[x][y], cur_p);
         swap(velocity.v[x][y], v);
     }
 };
@@ -478,6 +538,9 @@ bool propagate_move(int x, int y, bool is_first) { // клетки поля и i
         for (size_t i = 0; i < deltas.size(); ++i) { // перебираем соседей
             auto [dx, dy] = deltas[i];
             int nx = x + dx, ny = y + dy;
+            if (!checkSz(nx, ny)) {
+                continue;
+            }
             if (field[nx][ny] == '#' || last_use[nx][ny] == UT) { // если бордюр или уже помеченная то TODO?
                 tres[i] = sum;
                 continue;
@@ -501,6 +564,9 @@ bool propagate_move(int x, int y, bool is_first) { // клетки поля и i
         auto [dx, dy] = deltas[d];
         nx = x + dx;
         ny = y + dy;
+        if (!checkSz(nx, ny)) {
+            continue;
+        }
         assert(velocity.get(x, y, dx, dy) > VT(0) && field[nx][ny] != '#' && last_use[nx][ny] < UT);
 
         ret = (last_use[nx][ny] == UT - 1 || propagate_move(nx, ny, false));
@@ -509,6 +575,9 @@ bool propagate_move(int x, int y, bool is_first) { // клетки поля и i
     for (size_t i = 0; i < deltas.size(); ++i) { // перебираем соседей
         auto [dx, dy] = deltas[i];
         int nx = x + dx, ny = y + dy;
+        if (!checkSz(nx, ny)) {
+            continue;
+        }
         if (field[nx][ny] != '#' && last_use[nx][ny] < UT - 1 && velocity.get(x, y, dx, dy) < VT(0)) { // если не бордюр, не была ещё рассмотренная и что-то в ней есть TODO?
             propagate_stop(nx, ny);
         }
@@ -516,9 +585,9 @@ bool propagate_move(int x, int y, bool is_first) { // клетки поля и i
     if (ret) { // TODO?
         if (!is_first) { // TODO?
             ParticleParams pp{}; // TODO?
-            pp.swap_with(point_, velocity, x, y);
-            pp.swap_with(point_, velocity, nx, ny);
-            pp.swap_with(point_, velocity, x, y);
+            pp.swap_with(point, velocity, field, x, y);
+            pp.swap_with(point, velocity, field, nx, ny);
+            pp.swap_with(point, velocity, field, x, y);
         }
     }
     return ret;
@@ -527,27 +596,50 @@ bool propagate_move(int x, int y, bool is_first) { // клетки поля и i
 //double dirs[N][M]{}; // TODO?
 
 using DDinamic = std::vector<std::vector<double>>;
-using DArr = std::conditional<isStatic,std::array<std::array<double, MStatic>, NStatic>, LUDinamic>::type;
+using DArr = std::conditional<IsStatic,std::array<std::array<double, MStatic>, NStatic>, DDinamic>::type;
 
 DArr dirs;
 
-template<enable_if<!isStatic>>
 void initDirs() {
-    dirs.resize(N, std::vector<double>(M));
-}
-
-template<enable_if<isStatic>>
-constexpr void initDirs() {
-    for (int i = 0; i < NStatic; i++) {
-        for (int j = 0; j < MStatic; j++) {
-            dirs[i][j] = 0;
+    if constexpr (!IsStatic) {
+        dirs.resize(N, std::vector<double>(M));
+    } else {
+        for (int i = 0; i < NStatic; i++) {
+            for (int j = 0; j < MStatic; j++) {
+                dirs[i][j] = 0;
+            }
         }
     }
 }
 
-void run() {
+void parseField(std::string fieldFile) {
+    freopen(fieldFile.c_str(), "r", stdin);
+    std::size_t N, M;
+    std::cin >> N >> M;
+    getchar(); // \n
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < M; j++) {
+            field[i][j] = getchar();
+        }
+        getchar(); //\n
+    }
+
+    fclose(stdin);
+}
+
+bool checkSz(int x, int y) {
+    return (x >= 0 && y >= 0 && x < N && y < M);
+}
+
+void run(std::string fieldFile) {
     initLastUse();
     initDirs();
+    initField();
+    initPoint();
+
+    parseField(fieldFile);
+    velocity.initVectorField(N, M);
+    velocity_flow.initVectorField(N, M);
     rho[' '] = 0.01; // задаём константы
     rho['.'] = 1000;
     //VT g = 0.1; // типо g физическая
@@ -558,9 +650,19 @@ void run() {
             if (field[x][y] == '#')
                 continue;
             for (auto [dx, dy] : deltas) {
+                if (x + dx >= N || y + dy >= M) {
+                    continue;
+                }
                 dirs[x][y] += (field[x + dx][y + dy] != '#');
             }
         }
+    }
+
+    for (size_t x = 0; x < N; ++x) {
+        for (size_t y = 0; y < M; ++y) {
+            cout << field[x][y];
+        }
+        std::cout << '\n';
     }
 
     for (size_t i = 0; i < T; ++i) { // итерируемся по тикам
@@ -571,19 +673,30 @@ void run() {
             for (size_t y = 0; y < M; ++y) {
                 if (field[x][y] == '#')
                     continue;
+                if (x + 1 >= N) {
+                    continue;
+                }
                 if (field[x + 1][y] != '#')
                     velocity.add(x, y, 1, 0, g);
             }
         }
 
         // Apply forces from p
-        memcpy(old_point, point_, sizeof(point_));
+        //memcpy(old_point, point, sizeof(point)); TODO грустно конечно но пока так
+        for (size_t x = 0; x < N; ++x) {
+            for (size_t y = 0; y < M; ++y) {
+                old_point[x][y] = point[x][y];
+            }
+        }
         for (size_t x = 0; x < N; ++x) {
             for (size_t y = 0; y < M; ++y) {
                 if (field[x][y] == '#')
                     continue;
                 for (auto [dx, dy] : deltas) {
                     int nx = x + dx, ny = y + dy;
+                    if (!checkSz(nx, ny)) {
+                        continue;
+                    }
                     if (field[nx][ny] != '#' && old_point[nx][ny] < old_point[x][y]) {
                         PT delta_p = old_point[x][y] - old_point[nx][ny];
                         PT force = delta_p;
@@ -598,7 +711,7 @@ void run() {
                         VT in_;
                         tryConv((force) / rho[(int) field[x][y]], in_);
                         velocity.add(x, y, dx, dy, in_);
-                        point_[x][y] -= force / VT(dirs[x][y]);
+                        point[x][y] -= force / VT(dirs[x][y]);
                         total_delta_p -= force / VT(dirs[x][y]);
                     }
                 }
@@ -607,6 +720,7 @@ void run() {
 
         // Make flow from velocities
         velocity_flow = {};
+        velocity_flow.initVectorField(N, M);
         bool prop = false;
         do {
             UT += 2;
@@ -629,6 +743,9 @@ void run() {
                 if (field[x][y] == '#')
                     continue;
                 for (auto [dx, dy] : deltas) {
+                    if (!checkSz(x + dx, y + dy)) {
+                        continue;
+                    }
                     auto old_v = velocity.get(x, y, dx, dy);
                     auto new_v = velocity_flow.get(x, y, dx, dy);
                     if (old_v > VT(0)) {
@@ -640,10 +757,10 @@ void run() {
                         if (field[x][y] == '.')
                             force *= 0.8;
                         if (field[x + dx][y + dy] == '#') {
-                            point_[x][y] += force / PT(dirs[x][y]);
+                            point[x][y] += force / PT(dirs[x][y]);
                             total_delta_p += force / PT(dirs[x][y]);
                         } else {
-                            point_[x + dx][y + dy] += force / PT(dirs[x + dx][y + dy]);
+                            point[x + dx][y + dy] += force / PT(dirs[x + dx][y + dy]);
                             total_delta_p += force / PT(dirs[x + dx][y + dy]);
                         }
                     }
@@ -670,35 +787,22 @@ void run() {
         if (prop) {
             cout << "Tick " << i << ":\n";
             for (size_t x = 0; x < N; ++x) {
-                cout << field[x] << "\n";
+                for (size_t y = 0; y < M; ++y) {
+                    std::cout << field[x][y];
+                }
+                std::cout << '\n';
             }
         }
     }
 }
 
-#undef point_
+#undef point
 #undef old_point
 #undef field
 #undef N
 #undef M
 
 };
-
-template<typename FT>
-void parseField(const char* fieldFile) {
-    freopen(fieldFile, "r", stdin);
-    
-    std::size_t N, M;
-    std::cin >> N >> M;
-    FT{}(N, M);
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < M; j++) {
-            std::cin >> FT::f[i][j];
-        }
-    }
-
-    fclose(stdin);
-}
 
 namespace typeSetter {
 
@@ -721,21 +825,21 @@ void setTypeDouble(auto& func, std::string_view type) {
     }
 }
 
-void setType(char* type_b, std::string_view type, auto func) {
+void setType(std::string type, auto func) {
     std::size_t n = std::numeric_limits<size_t>::max(), k = n;
     bool f;
     if (type != "FLOAT" && type != "DOUBLE") {
-        int res = sscanf(type_b, "FIXED(%zu, %zu)", &n, &k);
+        int res = sscanf(type.c_str(), "FIXED(%zu, %zu)", &n, &k);
         if (res == 0) {
-            int res = sscanf(type_b, "FAST_FIXED(%zu, %zu)", &n, &k);
+            int res = sscanf(type.c_str(), "FAST_FIXED(%zu, %zu)", &n, &k);
             if (res == 0) {
                 throw std::runtime_error("error");
                 return;
             }
         }
     }
-    #define FIXED(N, K) setTypeFixed<N,K,false>(func, n, k, f)
-    #define FAST_FIXED(N, K) setTypeFixed<N,K,true>(func, n, k, f)
+    #define FIXED(N, K) setTypeFixed<N,K,false>(func, n, k, false)
+    #define FAST_FIXED(N, K) setTypeFixed<N,K,true>(func, n, k, true)
     #define FLOAT setTypeFloat(func, type)
     #define DOUBLE setTypeDouble(func, type)
     TYPES;
@@ -748,15 +852,59 @@ void setType(char* type_b, std::string_view type, auto func) {
 template<std::size_t N, std::size_t M, typename T1, typename T2, typename T3>
 void setNumber(std::size_t CN, std::size_t CM, std::string fieldFile) {
     if (CN == N && CM == M) {
-        parseField<FieldStatic<N, M, T1>>(fieldFile);
-        fluidEmulator<T1, T2, T3, FieldStatic<N, M, T1>, N, M>{}.run();
+        //parseField<FieldStatic<N, M, T1>>(fieldFile);
+        fluidEmulator<T1, T2, T3, true, N, M>().run(fieldFile);
     }
 }
 
 }
 
-int main() {
-    auto first_type = "FAST_FIXED(20, 10)";
+int main(int argc, char* argv[]) {
+    std::string first_type, second_type, third_type, fieldFile;
+    std::size_t CN, CM;
+
+    bool set[10]{};
+    for (std::size_t i = 1; i < argc; i++) {
+        std::string cur = argv[i];
+        std::string name, value;
+        std::size_t eqInd;
+        if ((eqInd = cur.find('=')) == std::string::npos) {
+            throw std::runtime_error("failed to parse params");
+        }
+
+        name = cur.substr(0, eqInd);
+        value = cur.substr(eqInd + 1, cur.size() - eqInd - 1);
+
+        if (name == "--p-type") {
+            first_type = value;
+            set[0] = true;
+        } else if (name == "--v-type") {
+            second_type = value;
+            set[1] = true;
+        } else if (name == "--v-flow-type") {
+            third_type = value;
+            set[2] = true;
+        } else if (name == "--n") {
+            CN = stoul(value); // CARE won't work on specific systems
+            set[3] = true;
+        } else if (name == "--m") {
+            CM = stoul(value); // CARE won't work on specific systems
+            set[4] = true;
+        } else if (name == "--field-file") {
+            fieldFile = value;
+            set[5] = true;
+        } else {
+            throw std::runtime_error("got unexpected argv");
+        }
+    }
+
+    for (std::size_t i = 0; i < 6; i++) {
+        if (!set[i]) {
+            throw std::runtime_error("one of fields was not set");
+        }
+    }
+
+    /*auto first_type = "FAST_FIXED(20, 10)";
     char first_type_b[] = "FAST_FIXED(20, 10)";
     auto second_type = "FAST_FIXED(20, 10)";
     char second_type_b[] = "FAST_FIXED(20, 10)";
@@ -766,16 +914,15 @@ int main() {
     std::size_t CN = 36;
     std::size_t CM = 84;
 
-    const char* fieldFile = "field";
+    const char* fieldFile = "field";*/
 
-    typeSetter::setType(first_type_b, first_type, [&]<typename T1>() {
-        typeSetter::setType(second_type_b, second_type, [&]<typename T2>() {
-            typeSetter::setType(third_type_b, third_type, [&]<typename T3>() {
-                #define S(N, M) typeSetter::setNumber<N,M>(CN, CM, field)
+    typeSetter::setType(first_type, [&]<typename T1>() {
+        typeSetter::setType(second_type, [&]<typename T2>() {
+            typeSetter::setType(third_type, [&]<typename T3>() {
+                #define S(N, M) typeSetter::setNumber<N,M>(CN, CM, field, fieldFile)
                 #undef S
 
-                parseField<FieldDinamic<T1>>(fieldFile);
-                fluidEmulator<T1, T2, T3, FieldDinamic<T1>, 0, 0>{}.run();
+                fluidEmulator<T1, T2, T3, false, 0, 0>(CN,CM).run(fieldFile);
             });
         });
     });
