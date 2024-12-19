@@ -8,33 +8,12 @@
 #include <ranges>
 #include <algorithm>
 #include <cstring>
-#define TYPES FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT
-#define SIZES S(1920,1080),S(36,84)
 
 using namespace std;
 
-//constexpr size_t N = 36, M = 84; // размеры поля ? TODO
-// constexpr size_t N = 14, M = 5;
 constexpr size_t T = 1'000'000; // кол-во тиков которые будут сделаны
 constexpr std::array<pair<int, int>, 4> deltas{{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}}; // куда из каждой точки попытаемся потечь?
 constexpr long double eps = 1e-6;
-
-// char field[N][M + 1] = {
-//     "#####",
-//     "#.  #",
-//     "#.# #",
-//     "#.# #",
-//     "#.# #",
-//     "#.# #",
-//     "#.# #",
-//     "#.# #",
-//     "#...#",
-//     "#####",
-//     "#   #",
-//     "#   #",
-//     "#   #",
-//     "#####",
-// };
 
 mt19937 rnd(1303);
 
@@ -55,8 +34,6 @@ struct Fixed {
     template<std::size_t No, std::size_t Ko, bool Fo>
     constexpr Fixed(Fixed<No, Ko, Fo> o): v(o.to_double()*(1<<K)) {}
     constexpr Fixed(): v(0) {}
-    //operator double() const { return to_double(); }
-    //operator float() const { return to_double(); }
 
     constexpr double to_double() const {
         return v / (double) (1 << K);
@@ -69,8 +46,6 @@ struct Fixed {
     }
     T v;
 
-    //static constexpr Fixed inf = Fixed::from_raw(std::numeric_limits<T>::max());
-    //static constexpr Fixed eps = Fixed::from_raw(deltas.size());
 
     Fixed operator+(Fixed o) {
         return from_raw(v + o.v);
@@ -230,40 +205,6 @@ std::ostream& operator<<(std::ostream &out, const Fixed<N,K,F>& f) {
     return out << f.v / (double) (1 << K);
 }
 
-/*
-template<std::size_t N, std::size_t M, typename PT>
-struct FieldStatic {
-    FieldStatic(){}
-    void SetSize(std::size_t _, std::size_t __){}
-    constexpr static char f[N][M];
-    static PT point[N][M]{};
-    static PT old_point[N][M];
-    constexpr const static std::size_t N_ = N;
-    constexpr const static std::size_t M_ = M;
-    constexpr const static bool isStatic = true;
-};
-
-
-template<typename PT>
-struct FieldDinamic {
-    FieldDinamic(){}
-    void SetSize(std::size_t N__, std::size_t M__) {
-        N_ = N__;
-        M_ = M__;
-        f.resize(0);
-        f.resize(N_, std::vector<char> (M_));
-        point.resize(N_, std::vector<PT> (M_));
-        // assign to point zeroes???? TODO CHECK
-        old_point.resize(N_, std::vector<PT> (M_));
-    }
-    //FieldDinamic(){}
-    static std::vector<std::vector<char>> f;
-    static std::vector<std::vector<PT>> point;
-    static std::vector<std::vector<PT>> old_point;
-    std::size_t N_;
-    std::size_t M_;
-    constexpr const static bool isStatic = false;
-};*/
 
 template<typename PT, typename VT, typename VFT, bool IsStatic, std::size_t NStatic, std::size_t MStatic>
 struct fluidEmulator {
@@ -275,7 +216,6 @@ fluidEmulator() {
     N = NStatic;
     M = MStatic;
 }
-//constexpr static char f[N][M];
 
 using FDinamic = std::vector<std::vector<char>>;
 using FArr = std::conditional<IsStatic,std::array<std::array<char, MStatic>, NStatic>, FDinamic>::type;
@@ -297,8 +237,6 @@ void initField() {
 using PDinamic = std::vector<std::vector<PT>>;
 using PArr = std::conditional<IsStatic,std::array<std::array<PT, MStatic>, NStatic>, PDinamic>::type;
 
-//static PT point[N][M]{};
-//static PT old_point[N][M];
 PArr point, old_point;
 
 void initPoint() {
@@ -314,63 +252,10 @@ void initPoint() {
     }
 }
 
-//std::size_t N, std::size_t M;
-//const static auto& field = FT::f;
-/*
-#define isStatic FT::isStatic
-#define field FT::f
-#define point FT::point
-#define old_point FT::old_point
-#define N FT{}.N_
-#define M FT{}.M_
-*/
-
-/*
-char field[N][M + 1] = { // само поле M + 1 хз почему
-    "####################################################################################",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                       .........                                  #",
-    "#..............#            #           .........                                  #",
-    "#..............#            #           .........                                  #",
-    "#..............#            #           .........                                  #",
-    "#..............#            #                                                      #",
-    "#..............#            #                                                      #",
-    "#..............#            #                                                      #",
-    "#..............#            #                                                      #",
-    "#..............#............#                                                      #",
-    "#..............#............#                                                      #",
-    "#..............#............#                                                      #",
-    "#..............#............#                                                      #",
-    "#..............#............#                                                      #",
-    "#..............#............#                                                      #",
-    "#..............#............#                                                      #",
-    "#..............#............#                                                      #",
-    "#..............#............################                     #                 #",
-    "#...........................#....................................#                 #",
-    "#...........................#....................................#                 #",
-    "#...........................#....................................#                 #",
-    "##################################################################                 #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "#                                                                                  #",
-    "####################################################################################",
-};
-*/
 VT rho[256]; // какие-то константы? TODO
 
 template<typename T>
 struct VectorField { // changed Fixed->T
-    //array<T, deltas.size()> v[N][M]; // TODO вероятно для каждой клетки какой-то поток в разные стороны
-    //using TStatic = std::array<std::array<std::array<T, deltas.size()>, M>, N>;
     using TDinamic = std::vector<std::vector<array<T, deltas.size()>>>;
     using TArr = std::conditional<IsStatic, std::array<std::array<std::array<T, deltas.size()>, MStatic>, NStatic>, TDinamic>::type;
 
@@ -395,14 +280,12 @@ struct VectorField { // changed Fixed->T
     }
 };
 
-//VectorField<VT> testt = VectorField<VT> ();
 VectorField<VT> velocity;
 VectorField<VFT> velocity_flow; // TODO ?
 
 using LUDinamic = std::vector<std::vector<int>>;
 using LUArr = std::conditional<IsStatic,std::array<std::array<int, MStatic>, NStatic>, LUDinamic>::type;
 
-//int last_use[N][M]{}; // базовый used для dfs
 LUArr last_use;
 
 void initLastUse() {
@@ -593,8 +476,6 @@ bool propagate_move(int x, int y, bool is_first) { // клетки поля и i
     return ret;
 }
 
-//double dirs[N][M]{}; // TODO?
-
 using DDinamic = std::vector<std::vector<double>>;
 using DArr = std::conditional<IsStatic,std::array<std::array<double, MStatic>, NStatic>, DDinamic>::type;
 
@@ -642,7 +523,6 @@ void run(std::string fieldFile) {
     velocity_flow.initVectorField(N, M);
     rho[' '] = 0.01; // задаём константы
     rho['.'] = 1000;
-    //VT g = 0.1; // типо g физическая
     VT g = 1;
 
     for (size_t x = 0; x < N; ++x) {
@@ -773,7 +653,6 @@ void run(std::string fieldFile) {
         for (size_t x = 0; x < N; ++x) {
             for (size_t y = 0; y < M; ++y) {
                 if (field[x][y] != '#' && last_use[x][y] != UT) {
-                    //std::cout << random01() << ' ' << move_prob(x, y) << std::endl;
                     if (random01() < move_prob(x, y)) {
                         prop = true;
                         propagate_move(x, y, true);
@@ -795,12 +674,6 @@ void run(std::string fieldFile) {
         }
     }
 }
-
-#undef point
-#undef old_point
-#undef field
-#undef N
-#undef M
 
 };
 
@@ -852,7 +725,6 @@ void setType(std::string type, auto func) {
 template<std::size_t N, std::size_t M, typename T1, typename T2, typename T3>
 void setNumber(std::size_t CN, std::size_t CM, std::string fieldFile) {
     if (CN == N && CM == M) {
-        //parseField<FieldStatic<N, M, T1>>(fieldFile);
         fluidEmulator<T1, T2, T3, true, N, M>().run(fieldFile);
     }
 }
@@ -860,6 +732,8 @@ void setNumber(std::size_t CN, std::size_t CM, std::string fieldFile) {
 }
 
 int main(int argc, char* argv[]) {
+    cout.tie(0);
+
     std::string first_type, second_type, third_type, fieldFile;
     std::size_t CN, CM;
 
@@ -903,18 +777,6 @@ int main(int argc, char* argv[]) {
             throw std::runtime_error("one of fields was not set");
         }
     }
-
-    /*auto first_type = "FAST_FIXED(20, 10)";
-    char first_type_b[] = "FAST_FIXED(20, 10)";
-    auto second_type = "FAST_FIXED(20, 10)";
-    char second_type_b[] = "FAST_FIXED(20, 10)";
-    auto third_type = "FAST_FIXED(20, 10)";
-    char third_type_b[] = "FAST_FIXED(20, 10)";
-
-    std::size_t CN = 36;
-    std::size_t CM = 84;
-
-    const char* fieldFile = "field";*/
 
     typeSetter::setType(first_type, [&]<typename T1>() {
         typeSetter::setType(second_type, [&]<typename T2>() {
