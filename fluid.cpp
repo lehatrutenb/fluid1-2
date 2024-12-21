@@ -8,6 +8,11 @@
 #include <ranges>
 #include <algorithm>
 #include <cstring>
+#include <fstream>
+
+//#define TYPES FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT
+//#define SIZES S(1920,1080),S(36,84)
+#define SAVE_DIR "saves/"
 
 using namespace std;
 
@@ -494,7 +499,10 @@ void initDirs() {
 }
 
 void parseField(std::string fieldFile) {
-    freopen(fieldFile.c_str(), "r", stdin);
+    std::streambuf *save = std::cin.rdbuf();
+
+    std::ifstream fileIn(fieldFile);
+    std::cin.rdbuf(fileIn.rdbuf());
     std::size_t N, M;
     std::cin >> N >> M;
     getchar(); // \n
@@ -505,11 +513,54 @@ void parseField(std::string fieldFile) {
         getchar(); //\n
     }
 
-    fclose(stdin);
+    std::cin.rdbuf(save);
+    fileIn.close();
 }
 
 bool checkSz(int x, int y) {
     return (x >= 0 && y >= 0 && x < N && y < M);
+}
+
+void save(std::size_t tick, std::size_t n, std::size_t m, auto arr, auto arr2) {
+    std::streambuf *save = std::cout.rdbuf();
+
+    std::ofstream fileOut(SAVE_DIR + std::to_string(tick));
+
+    std::cout.rdbuf(fileOut.rdbuf());
+    std::cout << n << ' ' << m << ' ';
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            std::cout << arr[i][j] << ' ';
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        std::cout << arr2[i] << ' ';
+    }
+
+
+    std::cout.rdbuf(save);
+    fileOut.close();
+}
+
+void load(const std::string& fileName, std::size_t n, std::size_t m, auto& arr, auto& arr2) {
+    std::streambuf *save = std::cin.rdbuf();
+
+    std::ifstream fileIn(SAVE_DIR + fileName);
+    std::cin.rdbuf(fileIn.rdbuf());
+
+    std::size_t _;
+    std::cin >> _ >> _;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            std::cin >> arr[i][j];
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        std::cin >> arr2[i];
+    }
+
+    std::cin.rdbuf(save);
+    fileIn.close();
 }
 
 void run(std::string fieldFile) {
