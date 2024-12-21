@@ -1,4 +1,4 @@
-//#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("Ofast,unroll-loops")
 #include <cstdint>
 #include <limits>
 #include <utility>
@@ -583,7 +583,7 @@ void cin2D(T& arr, std::size_t n, std::size_t m) {
     }
 }
 
-void cin2Df(FArr& arr, std::size_t n, std::size_t m, std::istream& fileIn) {
+void cin2D(FArr& arr, std::size_t n, std::size_t m, std::istream& fileIn) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++) {
             arr[i][j] = static_cast<char>(fileIn.get());
@@ -604,7 +604,6 @@ void save(std::size_t tick) {
     std::ofstream fileOut(SAVE_DIR + std::to_string(tick));
 
     std::cout.rdbuf(fileOut.rdbuf());
-    //std::cout << N << ' ' << M << ' ';
     cout2D(field, N, M);
     cout2D(dirs, N, M);
     cout2D(last_use, N, M);
@@ -623,9 +622,7 @@ void load(std::size_t tick) {
     std::ifstream fileIn(SAVE_DIR + std::to_string(tick));
     std::cin.rdbuf(fileIn.rdbuf());
 
-    //std::size_t _; // N M
-    //std::cin >> _ >> _;
-    cin2Df(field, N, M, fileIn);
+    cin2D(field, N, M, fileIn);
     cin2D(dirs, N, M);
     cin2D(last_use, N, M);
     cin3D(velocity.v, N, M, 4);
