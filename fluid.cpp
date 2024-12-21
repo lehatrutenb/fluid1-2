@@ -1,4 +1,4 @@
-#pragma GCC optimize("Ofast,unroll-loops")
+//#pragma GCC optimize("Ofast,unroll-loops")
 #include <cstdint>
 #include <limits>
 #include <utility>
@@ -10,8 +10,6 @@
 #include <cstring>
 #include <fstream>
 
-//#define TYPES FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT
-//#define SIZES S(1920,1080),S(36,84)
 #define SAVE_DIR "saves/"
 
 using namespace std;
@@ -208,6 +206,14 @@ double operator/=(double& o, Fixed<N,K,F> t) {
 template<std::size_t N, std::size_t K, bool F>
 std::ostream& operator<<(std::ostream &out, const Fixed<N,K,F>& f) {
     return out << f.v / (double) (1 << K);
+}
+
+template<std::size_t N, std::size_t K, bool F>
+std::istream& operator>>(std::istream &in, Fixed<N,K,F>& f) {
+    double x;
+    in >> x;
+    tryConv(x, f);
+    return in;
 }
 
 
@@ -503,14 +509,15 @@ void parseField(std::string fieldFile) {
 
     std::ifstream fileIn(fieldFile);
     std::cin.rdbuf(fileIn.rdbuf());
+
     std::size_t N, M;
     std::cin >> N >> M;
-    getchar(); // \n
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < M; j++) {
-            field[i][j] = getchar();
+    static_cast<char>(fileIn.get()); //\n
+    for (std::size_t i = 0; i < N; i++) {
+        for (std::size_t j = 0; j < M; j++) {
+            field[i][j] = static_cast<char>(fileIn.get());
         }
-        getchar(); //\n
+        static_cast<char>(fileIn.get()); //\n
     }
 
     std::cin.rdbuf(save);
@@ -521,49 +528,116 @@ bool checkSz(int x, int y) {
     return (x >= 0 && y >= 0 && x < N && y < M);
 }
 
-void save(std::size_t tick, std::size_t n, std::size_t m, auto arr, auto arr2) {
-    std::streambuf *save = std::cout.rdbuf();
+template<typename T>
+void cout3D(T& arr, std::size_t n, std::size_t m, std::size_t k) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            for (int w = 0; w < k; w++) {
+                std::cout << arr[i][j][w] << ' ';
+            }
+        }
+    }
+}
 
-    std::ofstream fileOut(SAVE_DIR + std::to_string(tick));
-
-    std::cout.rdbuf(fileOut.rdbuf());
-    std::cout << n << ' ' << m << ' ';
+template<typename T>
+void cout2D(T& arr, std::size_t n, std::size_t m) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++) {
             std::cout << arr[i][j] << ' ';
         }
     }
-    for (int i = 0; i < n; i++) {
-        std::cout << arr2[i] << ' ';
-    }
-
-
-    std::cout.rdbuf(save);
-    fileOut.close();
 }
 
-void load(const std::string& fileName, std::size_t n, std::size_t m, auto& arr, auto& arr2) {
-    std::streambuf *save = std::cin.rdbuf();
+void cout2D(FArr& arr, std::size_t n, std::size_t m) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            std::cout << arr[i][j];
+        }
+    }
+}
 
-    std::ifstream fileIn(SAVE_DIR + fileName);
-    std::cin.rdbuf(fileIn.rdbuf());
+template<typename T>
+void cout1D(T& arr, std::size_t n) {
+    for (int i = 0; i < n; i++) {
+        std::cout << arr[i] << ' ';
+    }
+}
 
-    std::size_t _;
-    std::cin >> _ >> _;
+template<typename T>
+void cin3D(T& arr, std::size_t n, std::size_t m, std::size_t k) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            for (int w = 0; w < k; w++) {
+                std::cin >> arr[i][j][w];
+            }
+        }
+    }
+}
+
+template<typename T>
+void cin2D(T& arr, std::size_t n, std::size_t m) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++) {
             std::cin >> arr[i][j];
         }
     }
+}
+
+void cin2Df(FArr& arr, std::size_t n, std::size_t m, std::istream& fileIn) {
     for (int i = 0; i < n; i++) {
-        std::cin >> arr2[i];
+        for (int j = 0; j < m; j++) {
+            arr[i][j] = static_cast<char>(fileIn.get());
+        }
     }
+}
+
+template<typename T>
+void cin1D(T& arr, std::size_t n) {
+    for (int i = 0; i < n; i++) {
+        std::cin >> arr[i];
+    }
+}
+
+void save(std::size_t tick) {
+    std::streambuf *save = std::cout.rdbuf();
+
+    std::ofstream fileOut(SAVE_DIR + std::to_string(tick));
+
+    std::cout.rdbuf(fileOut.rdbuf());
+    //std::cout << N << ' ' << M << ' ';
+    cout2D(field, N, M);
+    cout2D(dirs, N, M);
+    cout2D(last_use, N, M);
+    cout3D(velocity.v, N, M, 4);
+    cout3D(velocity_flow.v, N, M, 4);
+    cout1D(rho, 256);
+    cout2D(point, N, M);
+
+    std::cout.rdbuf(save);
+    fileOut.close();
+}
+
+void load(std::size_t tick) {
+    std::streambuf *save = std::cin.rdbuf();
+
+    std::ifstream fileIn(SAVE_DIR + std::to_string(tick));
+    std::cin.rdbuf(fileIn.rdbuf());
+
+    //std::size_t _; // N M
+    //std::cin >> _ >> _;
+    cin2Df(field, N, M, fileIn);
+    cin2D(dirs, N, M);
+    cin2D(last_use, N, M);
+    cin3D(velocity.v, N, M, 4);
+    cin3D(velocity_flow.v, N, M, 4);
+    cin1D(rho, 256);
+    cin2D(point, N, M);
 
     std::cin.rdbuf(save);
     fileIn.close();
 }
 
-void run(std::string fieldFile) {
+void run(std::string fieldFile, int loadTick) {
     initLastUse();
     initDirs();
     initField();
@@ -572,6 +646,7 @@ void run(std::string fieldFile) {
     parseField(fieldFile);
     velocity.initVectorField(N, M);
     velocity_flow.initVectorField(N, M);
+
     rho[' '] = 0.01; // задаём константы
     rho['.'] = 1000;
     VT g = 1;
@@ -589,6 +664,10 @@ void run(std::string fieldFile) {
         }
     }
 
+    if (loadTick != -1) {
+        load(loadTick);
+    }
+
     for (size_t x = 0; x < N; ++x) {
         for (size_t y = 0; y < M; ++y) {
             cout << field[x][y];
@@ -596,7 +675,7 @@ void run(std::string fieldFile) {
         std::cout << '\n';
     }
 
-    for (size_t i = 0; i < T; ++i) { // итерируемся по тикам
+    for (size_t i = loadTick + 1; i < T; ++i) { // итерируемся по тикам
         
         PT total_delta_p = 0;
         // Apply external forces
@@ -722,6 +801,10 @@ void run(std::string fieldFile) {
                 }
                 std::cout << '\n';
             }
+
+            #ifdef SAVE
+            save(i);
+            #endif
         }
     }
 }
@@ -774,9 +857,9 @@ void setType(std::string type, auto func) {
 
 
 template<std::size_t N, std::size_t M, typename T1, typename T2, typename T3>
-void setNumber(std::size_t CN, std::size_t CM, std::string fieldFile) {
+void setNumber(std::size_t CN, std::size_t CM, std::string fieldFile, int loadTick) {
     if (CN == N && CM == M) {
-        fluidEmulator<T1, T2, T3, true, N, M>().run(fieldFile);
+        fluidEmulator<T1, T2, T3, true, N, M>().run(fieldFile, loadTick);
     }
 }
 
@@ -787,6 +870,7 @@ int main(int argc, char* argv[]) {
 
     std::string first_type, second_type, third_type, fieldFile;
     std::size_t CN, CM;
+    int loadTick = -1;
 
     bool set[10]{};
     for (std::size_t i = 1; i < argc; i++) {
@@ -818,6 +902,8 @@ int main(int argc, char* argv[]) {
         } else if (name == "--field-file") {
             fieldFile = value;
             set[5] = true;
+        } else if (name == "--load") {
+            loadTick = stoul(value);
         } else {
             throw std::runtime_error("got unexpected argv");
         }
@@ -832,10 +918,10 @@ int main(int argc, char* argv[]) {
     typeSetter::setType(first_type, [&]<typename T1>() {
         typeSetter::setType(second_type, [&]<typename T2>() {
             typeSetter::setType(third_type, [&]<typename T3>() {
-                #define S(N, M) typeSetter::setNumber<N,M>(CN, CM, field, fieldFile)
+                #define S(N, M) typeSetter::setNumber<N,M>(CN, CM, field, fieldFile, loadTick)
                 #undef S
 
-                fluidEmulator<T1, T2, T3, false, 0, 0>(CN,CM).run(fieldFile);
+                fluidEmulator<T1, T2, T3, false, 0, 0>(CN,CM).run(fieldFile, loadTick);
             });
         });
     });
