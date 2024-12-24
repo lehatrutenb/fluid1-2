@@ -7,12 +7,15 @@
 #include <ranges>
 #include <algorithm>
 #include <cstring>
+#include <chrono>
+
+#define NOT_TO_PRINT
 
 using namespace std;
 
 constexpr size_t N = 36, M = 84; // размеры поля ? TODO
 // constexpr size_t N = 14, M = 5;
-constexpr size_t T = 1'000'000; // кол-во тиков которые будут сделаны
+constexpr size_t T = 1000;//1'000'000; // кол-во тиков которые будут сделаны
 constexpr std::array<pair<int, int>, 4> deltas{{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}}; // куда из каждой точки попытаемся потечь?
 
 // char field[N][M + 1] = {
@@ -327,6 +330,8 @@ int main() {
         }
     }
 
+    const auto start = std::chrono::high_resolution_clock::now();
+
     for (size_t i = 0; i < T; ++i) {
         
         Fixed total_delta_p = 0;
@@ -426,10 +431,16 @@ int main() {
         }
 
         if (prop) {
+            #ifndef NOT_TO_PRINT
             cout << "Tick " << i << ":\n";
             for (size_t x = 0; x < N; ++x) {
                 cout << field[x] << "\n";
             }
+            #endif
         }
     }
+
+    const auto end = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<double> diff = end - start;
+    std::cout << "Time spent: " << diff << '\n';
 }
