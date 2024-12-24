@@ -26,3 +26,22 @@ runTest2E:
 runTest3:
 	g++ -DDEBUG="true" -std=c++2b test3.cpp
 	./a.out
+
+testBaseCode:
+	g++ -DDEBUG="true" -std=c++2b base_fluid.cpp
+	./a.out
+
+CreateBuildLib:
+	-mkdir fluid_build
+	cd fluid_build && cmake ..
+
+BuildRunCmakeRelease:
+	cd fluid_build && cmake .. -DSetDebugBuildType=OFF -DTYPES="FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT" -DSIZES="S(1920,1080),S(36,84)"
+	cd fluid_build && cmake --build .
+	cd fluid_build && ./Fluid3Project --p-type="FAST_FIXED(20, 10)" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FAST_FIXED(20, 10)" --n=36 --m=84 --field-file="../fluid3/field"
+
+BuildRunCmakeDebug:
+	cd fluid_build && cmake -S .. -DSetDebugBuildType=ON -DTYPES="FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT" -DSIZES="S(1920,1080),S(36,84)"
+	cd fluid_build && cmake --build .
+
+	cd fluid_build && ./Fluid3Project --p-type="FAST_FIXED(20, 10)" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FAST_FIXED(20, 10)" --n=36 --m=84 --field-file="../fluid3/field"
