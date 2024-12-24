@@ -17,6 +17,7 @@ add_compile_definitions(-DSIZES=${SIZES})
 set(SAVE_DIR
     ""
     CACHE STRING "dir to save ticks")
+
 add_compile_definitions(-DSAVE_DIR=${SAVE_DIR})
 
 add_executable(Fluid3Project fluid3/fluid.cpp)

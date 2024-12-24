@@ -1,1 +1,1 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/Fluid3Project.dir/fluid3/fluid.cpp.o -o Fluid3Project 
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/Fluid3Project.dir/fluid3/fluid.cpp.o -o Fluid3Project 

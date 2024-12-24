@@ -1,4 +1,4 @@
-//#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("Ofast,unroll-loops")
 #include <cstdint>
 #include <limits>
 #include <utility>
@@ -17,6 +17,7 @@
 //#define TYPES "FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT"
 //#define SIZES "S(1920,1080),S(36,84)"
 #define SAVE_DIR "saves/"
+#define NOT_TO_PRINT
 
 using namespace std;
 
@@ -802,7 +803,7 @@ void run(std::string fieldFile, int loadTick, std::size_t endTick, std::size_t m
     std::size_t threadFieldWidth = std::max((std::size_t) 1, M/maxThreadAmt);
 
     auto endCompletion = [&]() noexcept {
-        this->UT += 2;
+        //this->UT += 2;
         for (size_t x = 0; x < N; ++x) {
             for (size_t y = threadFieldWidth; y < M; y += threadFieldWidth + 1) {
                 if (field[x][y] != '#' && last_use[x][y] != this->UT) {
@@ -862,6 +863,7 @@ void run(std::string fieldFile, int loadTick, std::size_t endTick, std::size_t m
         runPropagateMove(prop);
 
         if (prop) {
+            #ifndef NOT_TO_PRINT
             cout << "Tick " << i << ":\n";
             for (size_t x = 0; x < N; ++x) {
                 for (size_t y = 0; y < M; ++y) {
@@ -869,6 +871,7 @@ void run(std::string fieldFile, int loadTick, std::size_t endTick, std::size_t m
                 }
                 std::cout << '\n';
             }
+            #endif
 
             #ifdef SAVE
             save(i);
@@ -882,16 +885,26 @@ void run(std::string fieldFile, int loadTick, std::size_t endTick, std::size_t m
     for (int i = 0; i < maxThreadAmt; i++) {
         threads[i].join();
     }
-
-    exit(0);
 }
 
 void runCalcTime(std::string fieldFile, int loadTick, std::size_t endTick, std::size_t maxThreadAmt) {
-    const auto start = std::chrono::high_resolution_clock::now();
-    run(fieldFile, loadTick, endTick, maxThreadAmt);
-    const auto end = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<double> diff = end - start;
-    std::cout << "Time spent: " << diff << '\n';
+    std::size_t runAmt = 3;
+    std::vector<std::chrono::duration<double>> res;
+    for (std::size_t curThreadAmt = 1; curThreadAmt < 36; curThreadAmt++) {
+        const auto start = std::chrono::high_resolution_clock::now();
+        for (std::size_t runInd = 0; runInd < runAmt; runInd++) {
+            run(fieldFile, loadTick, endTick, maxThreadAmt);
+        }
+        const auto end = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<double> diff = end - start;
+        std::cout << "Thread amount: " << curThreadAmt << "  Time spent: " << diff / (double) runAmt << '\n' << '\n';
+        res.push_back(diff / (double) runAmt);
+    }
+    std::cout<<'[';
+    for (auto el : res) {
+        std::cout << el << ",";
+    }
+    std::cout<<']';
     exit(0);
 }
 
@@ -955,7 +968,7 @@ int main(int argc, char* argv[]) {
     cout.tie(0);
 
     std::string first_type, second_type, third_type, fieldFile;
-    std::size_t CN, CM, endTick=1000, maxThreadAmt=16;
+    std::size_t CN, CM, endTick=1000, maxThreadAmt=1;
     int loadTick = -1;
 
     bool set[10]{};
@@ -1005,7 +1018,8 @@ int main(int argc, char* argv[]) {
         }
     }*/
 
-    first_type = "FLOAT", second_type="FAST_FIXED(20, 10)" , third_type="FIXED(20, 10)", CN=36, CM=84, fieldFile="field";
+    //first_type = "FLOAT", second_type="FAST_FIXED(20, 10)" , third_type="FIXED(20, 10)", CN=36, CM=84, fieldFile="../field";  
+    //first_type = "FLOAT", second_type="FAST_FIXED(20, 10)" , third_type="FIXED(20, 10)", CN=1000, CM=1000, fieldFile="../field_large";
 
     typeSetter::setType(first_type, [&]<typename T1>() {
         typeSetter::setType(second_type, [&]<typename T2>() {

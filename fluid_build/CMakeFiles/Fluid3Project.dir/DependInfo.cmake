@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/Users/lehatrutenb/Desktop/prog/fluid1/fluid3/fluid.cpp" "CMakeFiles/Fluid3Project.dir/fluid3/fluid.cpp.o" "gcc" "CMakeFiles/Fluid3Project.dir/fluid3/fluid.cpp.o.d"
+  "/home/leha/Desktop/fluid1-2/fluid3/fluid.cpp" "CMakeFiles/Fluid3Project.dir/fluid3/fluid.cpp.o" "gcc" "CMakeFiles/Fluid3Project.dir/fluid3/fluid.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

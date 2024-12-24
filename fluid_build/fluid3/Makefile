@@ -48,27 +48,27 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /opt/homebrew/Cellar/cmake/3.28.3/bin/cmake
+CMAKE_COMMAND = /usr/bin/cmake
 
 # The command to remove a file.
-RM = /opt/homebrew/Cellar/cmake/3.28.3/bin/cmake -E rm -f
+RM = /usr/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/lehatrutenb/Desktop/prog/fluid1
+CMAKE_SOURCE_DIR = /home/leha/Desktop/fluid1-2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build
+CMAKE_BINARY_DIR = /home/leha/Desktop/fluid1-2/fluid_build
 
 #=============================================================================
 # Targets provided globally by CMake.
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running CMake cache editor..."
-	/opt/homebrew/Cellar/cmake/3.28.3/bin/ccmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "No interactive CMake dialog available..."
+	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -78,7 +78,7 @@ edit_cache/fast: edit_cache
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running CMake to regenerate build system..."
-	/opt/homebrew/Cellar/cmake/3.28.3/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/usr/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -87,14 +87,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build && $(CMAKE_COMMAND) -E cmake_progress_start /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build/CMakeFiles /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build/fluid3//CMakeFiles/progress.marks
-	cd /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 fluid3/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build/CMakeFiles 0
+	cd /home/leha/Desktop/fluid1-2/fluid_build && $(CMAKE_COMMAND) -E cmake_progress_start /home/leha/Desktop/fluid1-2/fluid_build/CMakeFiles /home/leha/Desktop/fluid1-2/fluid_build/fluid3//CMakeFiles/progress.marks
+	cd /home/leha/Desktop/fluid1-2/fluid_build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 fluid3/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/leha/Desktop/fluid1-2/fluid_build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 fluid3/clean
+	cd /home/leha/Desktop/fluid1-2/fluid_build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 fluid3/clean
 .PHONY : clean
 
 # The main clean target
@@ -103,17 +103,17 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 fluid3/preinstall
+	cd /home/leha/Desktop/fluid1-2/fluid_build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 fluid3/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 fluid3/preinstall
+	cd /home/leha/Desktop/fluid1-2/fluid_build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 fluid3/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/leha/Desktop/fluid1-2/fluid_build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Help Target
@@ -135,6 +135,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /Users/lehatrutenb/Desktop/prog/fluid1/fluid_build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/leha/Desktop/fluid1-2/fluid_build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

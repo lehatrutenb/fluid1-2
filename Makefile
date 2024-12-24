@@ -38,10 +38,20 @@ CreateBuildLib:
 BuildRunCmakeRelease:
 	cd fluid_build && cmake .. -DSetDebugBuildType=OFF -DTYPES="FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT" -DSIZES="S(1920,1080),S(36,84)"
 	cd fluid_build && cmake --build .
-	cd fluid_build && ./Fluid3Project --p-type="FAST_FIXED(20, 10)" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FAST_FIXED(20, 10)" --n=36 --m=84 --field-file="../fluid3/field"
+	cd fluid_build && ./Fluid3Project --p-type="FAST_FIXED(20, 10)" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FAST_FIXED(20, 10)" --n=36 --m=84 --field-file="../field"
+
+BuildRunCmakeReleaseSemiLarge:
+	cd fluid_build && cmake .. -DSetDebugBuildType=OFF -DTYPES="FAST_FIXED(20, 10)" -DSIZES="S(60, 150)"
+	cd fluid_build && cmake --build .
+	cd fluid_build && ./Fluid3Project --p-type="FAST_FIXED(20, 10)" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FAST_FIXED(20, 10)" --n=60 --m=150 --field-file="../field_semilarge"
+
+BuildRunCmakeReleaseLarge:
+	cd fluid_build && cmake .. -DSetDebugBuildType=OFF -DTYPES="FAST_FIXED(20, 10)"
+	cd fluid_build && cmake --build .
+	cd fluid_build && ./Fluid3Project --p-type="FAST_FIXED(20, 10)" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FAST_FIXED(20, 10)" --n=512 --m=512 --end-on-tick=100 --field-file="../field_large"
 
 BuildRunCmakeDebug:
 	cd fluid_build && cmake -S .. -DSetDebugBuildType=ON -DTYPES="FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT" -DSIZES="S(1920,1080),S(36,84)"
 	cd fluid_build && cmake --build .
 
-	cd fluid_build && ./Fluid3Project --p-type="FAST_FIXED(20, 10)" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FAST_FIXED(20, 10)" --n=36 --m=84 --field-file="../fluid3/field"
+	cd fluid_build && ./Fluid3Project --p-type="FAST_FIXED(20, 10)" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FAST_FIXED(20, 10)" --n=36 --m=84 --field-file="../field"
