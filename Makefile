@@ -1,5 +1,5 @@
 run:
-	g++ -DDEBUG="true" -DTYPES="FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT" -DSIZES="S(36,84)" -std=c++2b -fsanitize=address,undefined fluid/non_parallel_fluid.cpp
+	g++ -DDEBUG="true" -DTYPES="FAST_FIXED(20, 10), FIXED(20, 10),FIXED(20, 20),FLOAT" -DSIZES="S(36,84)" -std=c++2b fluid/non_parallel_fluid.cpp
 	./a.out --p-type="FLOAT" --v-type="FAST_FIXED(20, 10)" --v-flow-type="FIXED(20, 10)" --n=36 --m=84 --field-file="./fields/field"
 
 runSave:
